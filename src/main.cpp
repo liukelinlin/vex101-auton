@@ -160,7 +160,7 @@ void pre_auton() {
     } else if (current_auton_selection == 8){
       current_auton_selection = 0;
     }
-    task::sleep(10);
+    wait(10, msec);
   }
 }
 
