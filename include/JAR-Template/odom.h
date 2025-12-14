@@ -17,6 +17,11 @@ private:
   float kalman_Px;
   float kalman_Py;
   bool kalman_initialized;
+  // Previous velocities for smoothing
+  float prev_velocity_x;
+  float prev_velocity_y;
+  // Timestamp tracking for adaptive filtering
+  uint32_t last_update_time;
 public:
   Odom();
   float X_position;
