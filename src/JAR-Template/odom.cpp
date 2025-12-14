@@ -18,6 +18,21 @@ void Odom::set_physical_distances(float ForwardTracker_center_distance, float Si
   this->SidewaysTracker_center_distance = SidewaysTracker_center_distance;
 }
 
+Odom::Odom(){
+  ForwardTracker_center_distance = 0;
+  SidewaysTracker_center_distance = 0;
+  ForwardTracker_position = 0;
+  SideWaysTracker_position = 0;
+  X_position = 0;
+  Y_position = 0;
+  orientation_deg = 0;
+  kalman_X_position = 0;
+  kalman_Y_position = 0;
+  kalman_Px = 1;
+  kalman_Py = 1;
+  kalman_initialized = false;
+}
+
 /**
  * Resets the position, including tracking wheels.
  * Position is field-centric, and orientation is such that 0 degrees
@@ -89,6 +104,37 @@ void Odom::update_position(float ForwardTracker_position, float SidewaysTracker_
   float X_position_delta = local_polar_length*cos(global_polar_angle); 
   float Y_position_delta = local_polar_length*sin(global_polar_angle);
 
-  X_position+=X_position_delta;
-  Y_position+=Y_position_delta;
+  // Raw (unsmoothed) position update from odometry math
+  X_position += X_position_delta;
+  Y_position += Y_position_delta;
+
+  // Simple 1D Kalman filter on X and Y to smooth the track.
+  // Model: constant position with process noise, measurement is raw odom position.
+  const float process_variance = 0.01f;     // tunable: larger -> follow changes faster
+  const float measurement_variance = 0.25f; // tunable: larger -> smoother but more lag
+
+  if (!kalman_initialized){
+    kalman_X_position = X_position;
+    kalman_Y_position = Y_position;
+    kalman_Px = 1.0f;
+    kalman_Py = 1.0f;
+    kalman_initialized = true;
+  } else {
+    // Predict step (no motion model, just add process noise)
+    kalman_Px += process_variance;
+    kalman_Py += process_variance;
+
+    // Update step with measurement = raw odom position
+    float Kx = kalman_Px / (kalman_Px + measurement_variance);
+    float Ky = kalman_Py / (kalman_Py + measurement_variance);
+
+    kalman_X_position += Kx * (X_position - kalman_X_position);
+    kalman_Y_position += Ky * (Y_position - kalman_Y_position);
+
+    kalman_Px *= (1.0f - Kx);
+    kalman_Py *= (1.0f - Ky);
+  }
+
+  X_position = kalman_X_position;
+  Y_position = kalman_Y_position;
 }

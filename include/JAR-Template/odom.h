@@ -11,7 +11,14 @@ private:
   float SidewaysTracker_center_distance;
   float ForwardTracker_position;
   float SideWaysTracker_position;
+  // Kalman filter state for smoothing global position
+  float kalman_X_position;
+  float kalman_Y_position;
+  float kalman_Px;
+  float kalman_Py;
+  bool kalman_initialized;
 public:
+  Odom();
   float X_position;
   float Y_position;
   float orientation_deg;
